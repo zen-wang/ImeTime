@@ -691,7 +691,7 @@ Expected：輸出含 `API_URL="http://127.0.0.1:54321"` 與 `ANON_KEY="..."`（�
 `supabase/tests/profiles_rls.test.sql`：
 ```sql
 begin;
-select plan(9);
+select plan(11);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
@@ -721,6 +721,13 @@ select results_eq(
   $$update public.profiles set display_name = '小明二號'
     where id = '11111111-1111-1111-1111-111111111111' returning display_name$$,
   array['小明二號'], 'A updates own profile');
+select throws_ok(
+  $$update public.profiles set id = '22222222-2222-2222-2222-222222222222'
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '42501', null, 'A cannot reassign own profile to B');
+select throws_ok(
+  $$delete from public.profiles$$,
+  '42501', null, 'authenticated cannot delete profiles');
 
 -- B 看不到、改不到 A
 set local request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
@@ -766,8 +773,8 @@ create table public.profiles (
 
 alter table public.profiles enable row level security;
 
--- Supabase 預設會把 public schema 的表 grant 給 anon/authenticated；收回 anon
-revoke all on public.profiles from anon;
+-- Supabase 預設會把 public schema 的表 grant 給 anon/authenticated（含 DELETE/TRUNCATE）；全部收回後只還 select/insert/update
+revoke all on public.profiles from anon, authenticated;
 grant select, insert, update on public.profiles to authenticated;
 
 create policy "profiles: read own"
@@ -816,10 +823,14 @@ git commit -m "feat(db): add profiles table with RLS and pgTAP tests"
 `supabase/tests/avatars_storage.test.sql`：
 ```sql
 begin;
-select plan(4);
+select plan(8);
 
 insert into auth.users (id, email) values
-  ('11111111-1111-1111-1111-111111111111', 'a@example.com');
+  ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
+  ('22222222-2222-2222-2222-222222222222', 'b@example.com');
+-- B 的物件由 superuser 先放好，供負向與公開讀取測試
+insert into storage.objects (bucket_id, name)
+values ('avatars', '22222222-2222-2222-2222-222222222222/avatar.jpg');
 
 -- bucket 設定（以 postgres 身分檢查，不受 RLS 影響）
 select results_eq(
@@ -848,6 +859,30 @@ select results_eq(
     returning name$$,
   array['11111111-1111-1111-1111-111111111111/avatar.jpg'],
   'A updates (upsert) own object');
+
+select is_empty(
+  $$update storage.objects set metadata = '{"hijack": true}'::jsonb
+    where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg' returning name$$,
+  'A cannot update another user object');
+
+-- storage-api 自己刪除時也會設這個 GUC；保護 trigger 與待測的 RLS 政策無關
+set local storage.allow_delete_query = 'true';
+select is_empty(
+  $$delete from storage.objects
+    where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg' returning name$$,
+  'A cannot delete another user object');
+select results_eq(
+  $$delete from storage.objects
+    where bucket_id = 'avatars' and name = '11111111-1111-1111-1111-111111111111/avatar.jpg' returning name$$,
+  array['11111111-1111-1111-1111-111111111111/avatar.jpg'],
+  'A deletes own object');
+
+set local role anon;
+select results_eq(
+  $$select name from storage.objects
+    where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg'$$,
+  array['22222222-2222-2222-2222-222222222222/avatar.jpg'],
+  'anon reads any avatar object');
 
 select * from finish();
 rollback;
