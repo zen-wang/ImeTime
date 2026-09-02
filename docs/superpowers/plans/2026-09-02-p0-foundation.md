@@ -1643,11 +1643,13 @@ final class SessionCoordinator {
         self.profiles = profiles
     }
 
+    /// 開始觀察登入狀態。每次迭代才短暫強引用 self，避免 Task 與 coordinator 互相持有。
     func start() {
         observation?.cancel()
         observation = Task { [weak self] in
-            guard let self else { return }
-            for await state in auth.states() {
+            guard let states = self?.auth.states() else { return }
+            for await state in states {
+                guard let self else { return }
                 await self.apply(state)
             }
         }
