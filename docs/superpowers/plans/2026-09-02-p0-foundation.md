@@ -928,7 +928,7 @@ git commit -m "feat(db): add public avatars bucket with per-user folder policies
 - Produces:
   - `struct AppConfig: Sendable { let supabaseURL: URL; let supabaseAnonKey: String; static func load(bundle: Bundle = .main) -> AppConfig }`
   - `enum AuthState: Equatable, Sendable { case signedOut; case signedIn(userID: UUID) }`
-  - `protocol AuthService: Sendable { func states() -> AsyncStream<AuthState>; func signInWithApple(identityToken: String) async throws; func signOut() async throws }`
+  - `protocol AuthService: Sendable { func states() -> AsyncStream<AuthState>; func signInWithApple(identityToken: String, nonce: String) async throws; func signOut() async throws }`（`nonce` 為未雜湊的原始值；Apple 請求端放的是其 SHA-256 hex）
   - `enum AuthStateMapper { static func map(event: AuthChangeEvent, userID: UUID?) -> AuthState? }`（`nil` = 忽略此事件）
   - `final class SupabaseAuthService: AuthService`
 
@@ -970,6 +970,14 @@ import Testing
 
     @Test func passwordRecoveryIsIgnored() {
         #expect(AuthStateMapper.map(event: .passwordRecovery, userID: uid) == nil)
+    }
+
+    @Test func userUpdatedKeepsSignedIn() {
+        #expect(AuthStateMapper.map(event: .userUpdated, userID: uid) == .signedIn(userID: uid))
+    }
+
+    @Test func signedInWithoutUserIsIgnored() {
+        #expect(AuthStateMapper.map(event: .signedIn, userID: nil) == nil)
     }
 }
 ```
@@ -1020,7 +1028,8 @@ enum AuthState: Equatable, Sendable {
 /// 登入狀態來源。`states()` 先送出目前狀態，之後每次變化都送；App 存活期間不會結束。
 protocol AuthService: Sendable {
     func states() -> AsyncStream<AuthState>
-    func signInWithApple(identityToken: String) async throws
+    /// `nonce` 是產生請求時的原始亂數；Apple 的 request.nonce 必須是它的 SHA-256 hex。
+    func signInWithApple(identityToken: String, nonce: String) async throws
     func signOut() async throws
 }
 ```
@@ -1075,9 +1084,9 @@ final class SupabaseAuthService: AuthService {
         }
     }
 
-    func signInWithApple(identityToken: String) async throws {
+    func signInWithApple(identityToken: String, nonce: String) async throws {
         try await client.auth.signInWithIdToken(
-            credentials: OpenIDConnectCredentials(provider: .apple, idToken: identityToken)
+            credentials: OpenIDConnectCredentials(provider: .apple, idToken: identityToken, nonce: nonce)
         )
     }
 
@@ -1094,7 +1103,7 @@ final class SupabaseAuthService: AuthService {
 ```bash
 make test-app
 ```
-Expected：`** TEST SUCCEEDED **`，7 個測試通過。
+Expected：`** TEST SUCCEEDED **`，9 個測試通過。
 
 - [ ] **Step 5: Commit**
 
@@ -1415,6 +1424,7 @@ actor FakeAuthService: AuthService {
     private let stream: AsyncStream<AuthState>
     private let continuation: AsyncStream<AuthState>.Continuation
     private(set) var signInTokens: [String] = []
+    private(set) var signInNonces: [String] = []
     private(set) var signOutCount = 0
 
     init() {
@@ -1427,8 +1437,9 @@ actor FakeAuthService: AuthService {
         continuation.yield(state)
     }
 
-    func signInWithApple(identityToken: String) async throws {
+    func signInWithApple(identityToken: String, nonce: String) async throws {
         signInTokens.append(identityToken)
+        signInNonces.append(nonce)
         emit(.signedIn(userID: UUID(uuidString: "11111111-1111-1111-1111-111111111111")!))
     }
 
@@ -1669,15 +1680,17 @@ git commit -m "feat(app): add SessionCoordinator root state machine with fakes a
 ### Task 9: WelcomeView（Sign in with Apple）、AppEnvironment、RootView 接線
 
 **Files:**
-- Create: `ImeTime/App/AppEnvironment.swift`, `ImeTime/App/AppLinks.swift`, `ImeTime/Features/Onboarding/WelcomeView.swift`, `ImeTime/Features/Home/HomeView.swift`
+- Create: `ImeTime/App/AppEnvironment.swift`, `ImeTime/App/AppLinks.swift`, `ImeTime/Features/Onboarding/AppleNonce.swift`, `ImeTime/Features/Onboarding/WelcomeView.swift`, `ImeTime/Features/Home/HomeView.swift`
 - Modify: `ImeTime/App/ImeTimeApp.swift`, `ImeTime/App/RootView.swift`
+- Test: `ImeTimeTests/AppleNonceTests.swift`
 
 **Interfaces:**
 - Consumes: `SessionCoordinator`、`AuthService`、`ProfileRepository`
 - Produces:
   - `@MainActor struct AppEnvironment { let auth: any AuthService; let profiles: any ProfileRepository; static func live() -> AppEnvironment }`
   - `enum AppLinks { static let privacyPolicy: URL }`
-  - `struct WelcomeView: View { init(auth: any AuthService) }`
+  - `enum AppleNonce { static func random(byteCount: Int = 32) -> String; static func sha256Hex(_ input: String) -> String }`
+  - `struct WelcomeView: View { init(auth: any AuthService) }` — 每次按下按鈕產生新 nonce，`request.nonce = AppleNonce.sha256Hex(raw)`，成功後以原始 `raw` 呼叫 `auth.signInWithApple(identityToken:nonce:)`
   - `struct HomeView: View { init(profile: Profile, avatarURL: URL?, onSignOut: @escaping () -> Void) }`（P0 佔位，P1 改為房間列表）
   - `RootView` 在 `.createProfile` 時會使用 Task 10 的 `CreateProfileView(userID:profiles:onCreated:)`；本任務先以文字佔位，Task 10 替換。
 
@@ -1714,7 +1727,52 @@ enum AppLinks {
 }
 ```
 
-- [ ] **Step 2: 寫 WelcomeView**
+- [ ] **Step 2: 寫 AppleNonce（TDD）與 WelcomeView**
+
+`ImeTimeTests/AppleNonceTests.swift`：
+```swift
+import Testing
+@testable import ImeTime
+
+@Suite struct AppleNonceTests {
+    @Test func sha256HexMatchesKnownVector() {
+        #expect(AppleNonce.sha256Hex("abc") == "ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad")
+    }
+
+    @Test func randomNonceIsHexOfRequestedLength() {
+        let nonce = AppleNonce.random(byteCount: 32)
+        #expect(nonce.count == 64)
+        #expect(nonce.allSatisfy { $0.isHexDigit })
+    }
+
+    @Test func randomNoncesDiffer() {
+        #expect(AppleNonce.random() != AppleNonce.random())
+    }
+}
+```
+
+先執行 `make test-app` 確認失敗（`cannot find 'AppleNonce' in scope`），再寫實作：
+
+`ImeTime/Features/Onboarding/AppleNonce.swift`：
+```swift
+import CryptoKit
+import Foundation
+import Security
+
+/// Sign in with Apple 的 nonce：原始亂數交給 Supabase，其 SHA-256 hex 放進 Apple 的請求。
+enum AppleNonce {
+    static func random(byteCount: Int = 32) -> String {
+        var bytes = [UInt8](repeating: 0, count: byteCount)
+        let status = SecRandomCopyBytes(kSecRandomDefault, byteCount, &bytes)
+        precondition(status == errSecSuccess, "SecRandomCopyBytes failed: \(status)")
+        return bytes.map { String(format: "%02x", $0) }.joined()
+    }
+
+    static func sha256Hex(_ input: String) -> String {
+        SHA256.hash(data: Data(input.utf8)).map { String(format: "%02x", $0) }.joined()
+    }
+}
+```
 
 `ImeTime/Features/Onboarding/WelcomeView.swift`：
 ```swift
@@ -1724,6 +1782,7 @@ import SwiftUI
 struct WelcomeView: View {
     let auth: any AuthService
     @State private var errorMessage: String?
+    @State private var currentNonce: String?
 
     var body: some View {
         VStack(spacing: 24) {
@@ -1736,7 +1795,10 @@ struct WelcomeView: View {
                 .foregroundStyle(.secondary)
             Spacer()
             SignInWithAppleButton(.signIn) { request in
+                let nonce = AppleNonce.random()
+                currentNonce = nonce
                 request.requestedScopes = []
+                request.nonce = AppleNonce.sha256Hex(nonce)
             } onCompletion: { result in
                 Task { await handle(result) }
             }
@@ -1765,13 +1827,14 @@ struct WelcomeView: View {
         case .success(let authorization):
             guard let credential = authorization.credential as? ASAuthorizationAppleIDCredential,
                   let tokenData = credential.identityToken,
-                  let token = String(data: tokenData, encoding: .utf8)
+                  let token = String(data: tokenData, encoding: .utf8),
+                  let nonce = currentNonce
             else {
                 errorMessage = "Apple 沒有回傳有效的登入資訊。"
                 return
             }
             do {
-                try await auth.signInWithApple(identityToken: token)
+                try await auth.signInWithApple(identityToken: token, nonce: nonce)
             } catch {
                 errorMessage = "登入伺服器失敗，請確認網路與 Supabase 是否啟動。"
             }
