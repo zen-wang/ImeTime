@@ -7,7 +7,7 @@ struct AppEnvironment {
     let auth: any AuthService
     let profiles: any ProfileRepository
 
-    static func live(config: AppConfig = .load()) -> AppEnvironment {
+    static func live(config: AppConfig) -> AppEnvironment {
         let client = SupabaseClient(supabaseURL: config.supabaseURL, supabaseKey: config.supabaseAnonKey)
         return AppEnvironment(
             auth: SupabaseAuthService(client: client),
