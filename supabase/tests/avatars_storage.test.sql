@@ -1,5 +1,5 @@
 begin;
-select plan(8);
+select plan(9);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
@@ -58,13 +58,17 @@ select results_eq(
   array['11111111-1111-1111-1111-111111111111/avatar.jpg'],
   'A deletes own object');
 
-set local role anon;
-
 select results_eq(
   $$select name from storage.objects
     where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg'$$,
   array['22222222-2222-2222-2222-222222222222/avatar.jpg'],
-  'anon reads any avatar object');
+  'authenticated user reads another user avatar object');
+
+set local role anon;
+
+select is_empty(
+  $$select name from storage.objects where bucket_id = 'avatars'$$,
+  'anon cannot list avatar objects');
 
 select * from finish();
 rollback;

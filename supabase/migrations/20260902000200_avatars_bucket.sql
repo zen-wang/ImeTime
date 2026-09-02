@@ -28,7 +28,7 @@ create policy "avatars: delete own folder"
     and (storage.foldername(name))[1] = (select auth.uid()::text)
   );
 
--- public bucket 的下載不經 RLS；這條讓 SDK 的 list/select 也能讀
-create policy "avatars: public read"
-  on storage.objects for select to public
+-- 公開 bucket 的下載走 /object/public/ 不經 RLS；list/select 只給已登入使用者，避免 anon 列舉所有 user id
+create policy "avatars: authenticated read"
+  on storage.objects for select to authenticated
   using (bucket_id = 'avatars');
