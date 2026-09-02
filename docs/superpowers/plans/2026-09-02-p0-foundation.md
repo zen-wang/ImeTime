@@ -212,7 +212,7 @@ packages:
     path: Packages/ImeTimeCore
   Supabase:
     url: https://github.com/supabase/supabase-swift.git
-    from: 3.0.0
+    from: 2.0.0
 
 targets:
   ImeTime:
