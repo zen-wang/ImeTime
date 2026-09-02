@@ -76,7 +76,7 @@
 
 | 選項 | 優點 | 缺點 | 結論 |
 |---|---|---|---|
-| **Supabase Free**（Postgres + Auth + Realtime + Edge Functions + pg_cron + Webhooks） | 一個服務涵蓋 DB/認證/即時/函式/排程；RLS 直接保護資料；Swift SDK v3 原生支援 Sign in with Apple；SQL 可測試（pgTAP）；免費且不需信用卡 | 500 MB DB、1 GB 檔案、5 GB 出口流量（因此影片不放這裡）；無備份；7 天無 API 請求會暫停 | **採用**：只放 metadata、認證、即時同步；影片另放物件儲存 |
+| **Supabase Free**（Postgres + Auth + Realtime + Edge Functions + pg_cron + Webhooks） | 一個服務涵蓋 DB/認證/即時/函式/排程；RLS 直接保護資料；Swift SDK（2.x）原生支援 Sign in with Apple；SQL 可測試（pgTAP）；免費且不需信用卡 | 500 MB DB、1 GB 檔案、5 GB 出口流量（因此影片不放這裡）；無備份；7 天無 API 請求會暫停 | **採用**：只放 metadata、認證、即時同步；影片另放物件儲存 |
 | Firebase | 成熟 | 2026-02 起 Storage 強制 Blaze 綁卡；NoSQL 對「房間 × 日 × 小時 × 成員」查詢彆扭；Rules 難測 | 不採用 |
 | CloudKit | 免費、Apple 原生 | 群組共享（CKShare）模型複雜；除錯困難；無法之後擴到其他平台 | 不採用 |
 | 全 AWS（Cognito + DynamoDB + Lambda + S3 + SNS） | 完全掌控 | 開發與維運成本最高，且不比 Supabase Free + 物件儲存便宜 | 不採用 |
@@ -337,7 +337,7 @@ DB webhook 觸發條件與收件人：
 ## 7. iOS App 架構
 
 - **語言與工具**：Swift 6（strict concurrency）、SwiftUI、Xcode 26.x、最低 **iOS 18.0**（涵蓋 iPhone XS/XR 等 iOS 26 已放棄的機型）。
-- **依賴**：`supabase-swift` v3（Auth、PostgREST、Realtime、Functions；Storage 僅用於頭像）。R2 上傳/下載用系統 `URLSession`。不引入其他第三方套件。
+- **依賴**：`supabase-swift` 2.x（Auth、PostgREST、Realtime、Functions；Storage 僅用於頭像）。R2 上傳/下載用系統 `URLSession`。不引入其他第三方套件。
 - **方向**：App 整體直式；只有相機畫面與長按全螢幕播放為橫式。
 - **結構**（單一 Xcode 專案 + 一個本機 SPM 套件 `ImeTimeCore` 放純邏輯，方便在 macOS 上跑單元測試而不需模擬器）：
 

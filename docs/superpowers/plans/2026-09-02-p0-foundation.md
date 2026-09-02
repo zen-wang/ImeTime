@@ -6,7 +6,7 @@
 
 **Architecture:** 單一 Xcode 專案（由 XcodeGen 的 `project.yml` 產生）+ 本機 SPM 套件 `ImeTimeCore` 放純邏輯（可在 macOS 跑測試）。App 以 protocol 定義 `AuthService`、`ProfileRepository`，Supabase 實作與測試用假實作分離。後端為 Supabase 本機專案：SQL migrations + RLS + pgTAP。
 
-**Tech Stack:** Swift 6（strict concurrency）、SwiftUI、Swift Testing、XcodeGen、supabase-swift v3、Supabase CLI（Docker）、pgTAP。
+**Tech Stack:** Swift 6（strict concurrency）、SwiftUI、Swift Testing、XcodeGen、supabase-swift 2.x、Supabase CLI（Docker）、pgTAP。
 
 **Spec:** `docs/superpowers/specs/2026-09-02-imetime-design.md`（本計劃實作 §5 的 profiles/avatars、§6.1、§7、§8、§11 中 P0 相關部分）
 
@@ -14,7 +14,7 @@
 
 - 最低部署版本 **iOS 18.0**；只支援 iPhone（`TARGETED_DEVICE_FAMILY = 1`）；App 整體 **直式**。
 - Swift 語言模式 6、`SWIFT_STRICT_CONCURRENCY = complete`。
-- 唯一第三方依賴：`supabase-swift` v3（`from: 3.0.0`）。不得新增其他套件。
+- 唯一第三方依賴：`supabase-swift` 2.x（`from: 2.0.0`，目前解析為 2.55.1；尚無 3.x 正式版）。不得新增其他套件。
 - 所有模型為 `struct`，不可變；更新以回傳新值方式進行。
 - 單檔 ≤ 800 行；函式 ≤ 50 行。
 - UI 文案為 **繁體中文**。
@@ -1087,7 +1087,7 @@ final class SupabaseAuthService: AuthService {
 }
 ```
 
-若編譯器指出 `OpenIDConnectCredentials` 的參數名稱不同，以 `supabase-swift` 套件內 `Sources/Auth/Types.swift` 的定義為準（provider、idToken、accessToken、nonce 四個欄位）。
+若編譯器指出 `OpenIDConnectCredentials` 的參數名稱不同，以 `supabase-swift` 2.x 套件內 `Sources/Auth/Types.swift` 的定義為準（provider、idToken、accessToken、nonce 四個欄位）。
 
 - [ ] **Step 4: 執行確認通過**
 
@@ -1258,7 +1258,7 @@ struct SupabaseProfileRepository: ProfileRepository {
 }
 ```
 
-若 `upload` 的簽名編譯失敗，查 `supabase-swift` 的 `Sources/Storage/StorageFileApi.swift`：v3 為 `upload(_ path: String, data: Data, options: FileOptions)`。
+若 `upload` 的簽名編譯失敗，查 `supabase-swift` 的 `Sources/Storage/StorageFileApi.swift`：2.x 為 `upload(_ path: String, data: Data, options: FileOptions)`。
 
 - [ ] **Step 6: 建置**
 
