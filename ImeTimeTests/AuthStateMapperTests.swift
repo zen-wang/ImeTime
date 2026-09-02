@@ -33,4 +33,12 @@ import Testing
     @Test func passwordRecoveryIsIgnored() {
         #expect(AuthStateMapper.map(event: .passwordRecovery, userID: uid) == nil)
     }
+
+    @Test func userUpdatedKeepsSignedIn() {
+        #expect(AuthStateMapper.map(event: .userUpdated, userID: uid) == .signedIn(userID: uid))
+    }
+
+    @Test func signedInWithoutUserIsIgnored() {
+        #expect(AuthStateMapper.map(event: .signedIn, userID: nil) == nil)
+    }
 }

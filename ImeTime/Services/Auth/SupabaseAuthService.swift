@@ -22,9 +22,9 @@ final class SupabaseAuthService: AuthService {
         }
     }
 
-    func signInWithApple(identityToken: String) async throws {
+    func signInWithApple(identityToken: String, nonce: String) async throws {
         try await client.auth.signInWithIdToken(
-            credentials: OpenIDConnectCredentials(provider: .apple, idToken: identityToken)
+            credentials: OpenIDConnectCredentials(provider: .apple, idToken: identityToken, nonce: nonce)
         )
     }
 
