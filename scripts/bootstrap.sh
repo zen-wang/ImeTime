@@ -41,5 +41,34 @@ PY
 }
 fill_local_anon_key
 
+# 實機 Debug 版不能連 127.0.0.1（那是手機自己），改用這台 Mac 的 Bonjour 名稱
+fill_device_supabase_host() {
+  if ! grep -qE '^[[:space:]]*DEVICE_SUPABASE_HOST[[:space:]]*=[[:space:]]*$' Config/Local.xcconfig; then
+    grep -qE '^[[:space:]]*DEVICE_SUPABASE_HOST[[:space:]]*=' Config/Local.xcconfig \
+      && echo "Config/Local.xcconfig 的 DEVICE_SUPABASE_HOST 已有值，保持不變" \
+      || echo "Config/Local.xcconfig 沒有 DEVICE_SUPABASE_HOST 這一行，實機建置前請自行加上"
+    return 0
+  fi
+
+  local host
+  host="$(scutil --get LocalHostName 2>/dev/null).local"
+  if [ "$host" = ".local" ]; then
+    echo "取不到 LocalHostName，請手動填入 Config/Local.xcconfig 的 DEVICE_SUPABASE_HOST"
+    return 0
+  fi
+
+  HOST="$host" python3 - <<'PYEOF'
+import os, re, pathlib
+path = pathlib.Path("Config/Local.xcconfig")
+path.write_text(re.sub(
+    r'(?m)^([ \t]*DEVICE_SUPABASE_HOST[ \t]*=)[ \t]*$',
+    lambda m: m.group(1) + " " + os.environ["HOST"],
+    path.read_text(),
+))
+PYEOF
+  echo "已填入 Config/Local.xcconfig 的 DEVICE_SUPABASE_HOST = $host"
+}
+fill_device_supabase_host
+
 xcodegen generate
 echo "完成。下一步：make build"

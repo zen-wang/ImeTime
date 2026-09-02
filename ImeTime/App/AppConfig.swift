@@ -16,7 +16,8 @@ extension AppConfigError {
             let shown = rawValue.isEmpty ? "（空白）" : rawValue
             return """
             Supabase 網址無效：\(shown)
-            Debug 建置請確認 Config/Local.xcconfig 的 LOCAL_SUPABASE_ANON_KEY 已填，且本機 Supabase 已啟動；\
+            模擬器 Debug 建置請確認本機 Supabase 已啟動；實機 Debug 建置請確認 Config/Local.xcconfig 的 \
+            DEVICE_SUPABASE_HOST 已填入這台 Mac 的主機名或區網 IP；\
             Release 建置請確認 Config/Local.xcconfig 的 PROD_SUPABASE_URL 與 PROD_SUPABASE_ANON_KEY 已填。
             """
         case .missingAnonKey:

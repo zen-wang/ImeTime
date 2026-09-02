@@ -48,6 +48,7 @@ targets:
         NSPhotoLibraryAddUsageDescription: ImeTime 需要權限把每日 Vlog 存到你的相簿。
         SupabaseURL: $(SUPABASE_URL)
         SupabaseAnonKey: $(SUPABASE_ANON_KEY)
+        NSLocalNetworkUsageDescription: ImeTime 在開發版本中需要連線到你電腦上的本機伺服器。
         NSAppTransportSecurity:
           NSAllowsLocalNetworking: true
     entitlements:

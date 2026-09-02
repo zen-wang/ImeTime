@@ -11,6 +11,7 @@
 - `make test-app`：App 單元測試（模擬器）
 - `make db-reset` / `make test-db`：重建本機 DB / 跑 pgTAP（需 Docker 與 `supabase start`）
 - 所有 xcodebuild/xcrun 都要走 `scripts/xcodebuild.sh` 或 `DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`
+- 實機 Debug 版連本機 Supabase 走 `Config/Local.xcconfig` 的 `DEVICE_SUPABASE_HOST`（Mac 的 `.local` 名稱），模擬器走 127.0.0.1；由 `Config/Debug.xcconfig` 的 `[sdk=iphoneos*]` 條件切換
 
 ## 守則
 - Swift 6 strict concurrency；SwiftUI；`@Observable` view model 標 `@MainActor`

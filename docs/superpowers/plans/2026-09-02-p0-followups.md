@@ -2,6 +2,19 @@
 
 P0 完成於 2026-09-02，tag `p0-done`（分支 `feat/p0-foundation`）。以下是審查中延後處理的項目，依應處理的階段分類。
 
+## 在實機上測試（本機 Supabase）
+
+實機不能連 `127.0.0.1`（那是手機自己）。Debug 設定已改成依 SDK 分流：
+
+| 建置目標 | SUPABASE_URL |
+|---|---|
+| 模擬器 | `http://127.0.0.1:54321` |
+| 實機 | `http://$(DEVICE_SUPABASE_HOST):54321`，由 `Config/Local.xcconfig` 提供 |
+
+`make bootstrap` 會把 `DEVICE_SUPABASE_HOST` 自動填成 `scutil --get LocalHostName` 的 `.local` 名稱。若你的網路解析不到 Bonjour 名稱，改填 Mac 的區網 IP。
+
+前提條件：iPhone 與 Mac 連同一個 Wi-Fi；Mac 上 `supabase start` 執行中；iPhone 第一次連線時會跳出「本機網路」權限，必須按允許，然後再試一次登入（第一次嘗試通常會在跳出權限時失敗）。
+
 ## 專案擁有者現在要做的事
 
 1. **模擬器手動驗證 Sign in with Apple**（需你的 Apple ID）：
@@ -11,6 +24,8 @@ P0 完成於 2026-09-02，tag `p0-done`（分支 `feat/p0-foundation`）。以�
 2. **把 repo 推上 GitHub**（或決定隱私政策要放哪），然後把 `ImeTime/App/AppLinks.swift` 的 `privacyPolicy` 改成真實網址。目前指向 `github.com/zen-wang/ImeTime`，帳號是猜的。
 
 ## 排入 P1 的工作
+
+- **supabase-swift 的 `emitLocalSessionAsInitialSession`**：SDK 在 log 提醒目前的 initial session 行為會在下一個大版本改變，新行為會直接送出本機儲存的 session（可能已過期），要求呼叫端自行檢查 `session.isExpired`。目前維持預設（安全）；等 P1 動到 auth 時再一併 opt-in 並在 `AuthStateMapper` 或 `SupabaseAuthService` 加上過期檢查。
 
 - **新增任務：Supabase 實作的整合測試**。對本機 stack 建立使用者、透過 `SupabaseProfileRepository` 建立 profile、上傳 1 px 頭像、讀回；順便驗證小寫 UUID 路徑與日期解碼（含小數秒）。P0 目前 29 個 App 測試全部打 Fake。
 - profiles：`grant update (display_name, avatar_path)` 欄位級授權，避免 `created_at` 可被客戶端改寫；P1 擴大 select 政策時把「B 讀不到 profiles」改成「B 只讀得到室友」的正向測試。

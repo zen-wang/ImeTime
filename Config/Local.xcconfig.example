@@ -3,6 +3,9 @@
 IMETIME_TEAM_ID =
 // 執行 `supabase status -o env` 後把 ANON_KEY（或 PUBLISHABLE_KEY）貼到這裡
 LOCAL_SUPABASE_ANON_KEY =
+// 實機 Debug 版連本機 Supabase 用的主機名（make bootstrap 會自動填入 `scutil --get LocalHostName`.local）
+// 若 Bonjour 名稱在你的網路解析不到，改成 Mac 的區網 IP，例如 192.168.0.131
+DEVICE_SUPABASE_HOST =
 // 正式 Supabase 專案（P6 才需要）
 PROD_SUPABASE_URL = https:/$()/YOUR-PROJECT.supabase.co
 PROD_SUPABASE_ANON_KEY =

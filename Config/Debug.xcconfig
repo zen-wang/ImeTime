@@ -1,4 +1,7 @@
 #include "Base.xcconfig"
 // xcconfig 把 // 視為註解，所以用 $() 斷開
+// 模擬器與 Mac 共用網路，走 loopback
 SUPABASE_URL = http:/$()/127.0.0.1:54321
+// 實機不能用 127.0.0.1（那是手機自己）；改用 Mac 的 Bonjour 名稱，IP 變動也不受影響
+SUPABASE_URL[sdk=iphoneos*] = http:/$()/$(DEVICE_SUPABASE_HOST):54321
 SUPABASE_ANON_KEY = $(LOCAL_SUPABASE_ANON_KEY)

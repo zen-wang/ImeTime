@@ -27,6 +27,8 @@
 	</dict>
 	<key>NSCameraUsageDescription</key>
 	<string>ImeTime 需要相機來拍攝 2 秒片段與頭像。</string>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>ImeTime 在開發版本中需要連線到你電腦上的本機伺服器。</string>
 	<key>NSMicrophoneUsageDescription</key>
 	<string>ImeTime 需要麥克風來錄製片段聲音。</string>
 	<key>NSPhotoLibraryAddUsageDescription</key>
