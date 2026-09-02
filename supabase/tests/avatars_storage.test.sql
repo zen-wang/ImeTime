@@ -1,8 +1,12 @@
 begin;
-select plan(4);
+select plan(8);
 
 insert into auth.users (id, email) values
-  ('11111111-1111-1111-1111-111111111111', 'a@example.com');
+  ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
+  ('22222222-2222-2222-2222-222222222222', 'b@example.com');
+
+insert into storage.objects (bucket_id, name)
+  values ('avatars', '22222222-2222-2222-2222-222222222222/avatar.jpg');
 
 -- bucket 設定（以 postgres 身分檢查，不受 RLS 影響）
 select results_eq(
@@ -31,6 +35,36 @@ select results_eq(
     returning name$$,
   array['11111111-1111-1111-1111-111111111111/avatar.jpg'],
   'A updates (upsert) own object');
+
+select is_empty(
+  $$update storage.objects set metadata = '{"hijack": true}'::jsonb
+    where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg'
+    returning name$$,
+  'A cannot update another user object');
+
+-- storage-api sets this same GUC before issuing its own deletes; the RLS delete policy below is still what these assertions exercise
+set local storage.allow_delete_query = 'true';
+
+select is_empty(
+  $$delete from storage.objects
+    where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg'
+    returning name$$,
+  'A cannot delete another user object');
+
+select results_eq(
+  $$delete from storage.objects
+    where bucket_id = 'avatars' and name = '11111111-1111-1111-1111-111111111111/avatar.jpg'
+    returning name$$,
+  array['11111111-1111-1111-1111-111111111111/avatar.jpg'],
+  'A deletes own object');
+
+set local role anon;
+
+select results_eq(
+  $$select name from storage.objects
+    where bucket_id = 'avatars' and name = '22222222-2222-2222-2222-222222222222/avatar.jpg'$$,
+  array['22222222-2222-2222-2222-222222222222/avatar.jpg'],
+  'anon reads any avatar object');
 
 select * from finish();
 rollback;
