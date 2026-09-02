@@ -1,6 +1,7 @@
 name: ImeTime
 options:
   bundleIdPrefix: com.zenwang
+  developmentLanguage: zh-Hant
   deploymentTarget:
     iOS: "18.0"
   xcodeVersion: "26.0"
