@@ -11,8 +11,8 @@ struct RootView: View {
         case .welcome:
             WelcomeView(auth: environment.auth)
         case .createProfile(let userID):
-            // Task 10 會換成 CreateProfileView
-            Text("建立個人檔案（\(userID.uuidString.prefix(8))）")
+            CreateProfileView(userID: userID, profiles: environment.profiles, onCreated: coordinator.profileCreated)
+                .id(userID)
         case .home(let profile):
             HomeView(
                 profile: profile,
