@@ -5,3 +5,15 @@ DerivedData/
 .build/
 .env
 supabase/.temp/
+.superpowers/
+
+# Xcode / SwiftPM
+ImeTime.xcodeproj/
+*.xcworkspace/
+.swiftpm/
+Packages/*/.build/
+# 環境值
+Config/Local.xcconfig
+supabase/.env
+supabase/.temp/
+supabase/.branches/

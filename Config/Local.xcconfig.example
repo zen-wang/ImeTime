@@ -1,0 +1,8 @@
+// 複製為 Local.xcconfig 後填入。此檔不進 git。
+// Apple Developer Team ID（Xcode > Settings > Accounts 可查；模擬器建置可留空）
+IMETIME_TEAM_ID =
+// 執行 `supabase status -o env` 後把 ANON_KEY（或 PUBLISHABLE_KEY）貼到這裡
+LOCAL_SUPABASE_ANON_KEY =
+// 正式 Supabase 專案（P6 才需要）
+PROD_SUPABASE_URL = https:/$()/YOUR-PROJECT.supabase.co
+PROD_SUPABASE_ANON_KEY =
