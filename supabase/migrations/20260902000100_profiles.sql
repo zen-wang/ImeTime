@@ -9,7 +9,7 @@ create table public.profiles (
 alter table public.profiles enable row level security;
 
 -- Supabase 預設會把 public schema 的表 grant 給 anon/authenticated；收回 anon
-revoke all on public.profiles from anon;
+revoke all on public.profiles from anon, authenticated;
 grant select, insert, update on public.profiles to authenticated;
 
 create policy "profiles: read own"
