@@ -1531,8 +1531,9 @@ import Testing
 @Suite struct SessionCoordinatorTests {
     let uid = UUID(uuidString: "11111111-1111-1111-1111-111111111111")!
 
+    /// 固定時間戳：Profile 的 Equatable 含 createdAt，兩次 Date() 永遠不相等。
     private func makeProfile() -> Profile {
-        Profile(id: uid, displayName: "小明", avatarPath: nil, createdAt: Date())
+        Profile(id: uid, displayName: "小明", avatarPath: nil, createdAt: Date(timeIntervalSince1970: 1_756_800_000))
     }
 
     @Test func startsLoading() {
