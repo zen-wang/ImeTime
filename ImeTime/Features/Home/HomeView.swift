@@ -64,9 +64,12 @@ struct HomeView: View {
                 Task { await listViewModel.load() }
             }
         case .room(let room):
-            Text(room.name)              // Task 9 替換
+            RoomView(room: room, currentUserID: profile.id, environment: environment, path: $path)
         case .roomSettings(let room):
-            Text("\(room.name) 設定")     // Task 9 替換
+            RoomSettingsView(room: room, currentUserID: profile.id, environment: environment) {
+                path = []
+                Task { await listViewModel.load() }
+            }
         }
     }
 }
