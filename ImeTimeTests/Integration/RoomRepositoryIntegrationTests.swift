@@ -27,6 +27,10 @@ struct RoomRepositoryIntegrationTests {
         let joined = try await guest.rooms.joinRoom(code: code)
         #expect(joined.id == room.id)
 
+        // memberCount 只驗證 1 的話，常數 1 或 limit(1) 的錯誤實作也會通過
+        let summary = try #require(try await owner.rooms.myRooms().first { $0.room.id == room.id })
+        #expect(summary.memberCount == 2)
+
         let members = try await owner.rooms.members(roomID: room.id)
         #expect(members.count == 2)
         #expect(members.first { $0.userID == owner.userID }?.role == .owner)
