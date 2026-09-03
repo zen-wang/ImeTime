@@ -6,12 +6,14 @@ import Supabase
 struct AppEnvironment {
     let auth: any AuthService
     let profiles: any ProfileRepository
+    let rooms: any RoomRepository
 
     static func live(config: AppConfig) -> AppEnvironment {
         let client = SupabaseClient(supabaseURL: config.supabaseURL, supabaseKey: config.supabaseAnonKey)
         return AppEnvironment(
             auth: SupabaseAuthService(client: client),
-            profiles: SupabaseProfileRepository(client: client)
+            profiles: SupabaseProfileRepository(client: client),
+            rooms: SupabaseRoomRepository(client: client)
         )
     }
 }
