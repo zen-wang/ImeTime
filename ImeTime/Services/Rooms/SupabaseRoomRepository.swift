@@ -87,7 +87,7 @@ struct SupabaseRoomRepository: RoomRepository {
         let removed: [AffectedRow] = try await mapErrors {
             try await client
                 .from("room_members")
-                .delete()
+                .delete(returning: .representation)
                 .eq("room_id", value: roomID.uuidString)
                 .eq("user_id", value: userID.uuidString)
                 .execute()
@@ -101,7 +101,7 @@ struct SupabaseRoomRepository: RoomRepository {
         let updated: [AffectedRow] = try await mapErrors {
             try await client
                 .from("room_members")
-                .update(["notifications_muted": muted])
+                .update(["notifications_muted": muted], returning: .representation)
                 .eq("room_id", value: roomID.uuidString)
                 .eq("user_id", value: userID.uuidString)
                 .execute()

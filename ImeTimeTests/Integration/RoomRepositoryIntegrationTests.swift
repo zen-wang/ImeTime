@@ -73,4 +73,20 @@ struct RoomRepositoryIntegrationTests {
         let ownerMembers = try await owner.rooms.members(roomID: room.id)
         #expect(ownerMembers.map(\.userID) == [owner.userID])
     }
+
+    @Test func ownerMutesSelfThenRemovesGuest() async throws {
+        let owner = try await LocalSupabase.signUpUserWithProfile(displayName: "房主")
+        let guest = try await LocalSupabase.signUpUserWithProfile(displayName: "客人")
+        let room = try await owner.rooms.createRoom(name: try RoomName("週末小隊"), timeZoneID: "Asia/Taipei")
+        _ = try await guest.rooms.joinRoom(code: try #require(InviteCode(exact: room.inviteCode)))
+
+        // 成功的寫入必須回傳受影響的列；若 returning 變成 .minimal，這兩行會變成 notPermitted
+        try await owner.rooms.setMuted(roomID: room.id, userID: owner.userID, muted: true)
+        let afterMute = try await owner.rooms.members(roomID: room.id)
+        #expect(afterMute.first { $0.userID == owner.userID }?.notificationsMuted == true)
+
+        try await owner.rooms.removeMember(roomID: room.id, userID: guest.userID)
+        let afterRemove = try await owner.rooms.members(roomID: room.id)
+        #expect(afterRemove.map(\.userID) == [owner.userID])
+    }
 }
