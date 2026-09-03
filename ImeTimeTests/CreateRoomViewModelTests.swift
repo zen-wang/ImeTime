@@ -17,7 +17,7 @@ import Testing
     @Test func tooLongNameShowsLimit() async {
         let sut = CreateRoomViewModel(rooms: FakeRoomRepository(), timeZoneID: "Asia/Taipei")
         sut.nameInput = String(repeating: "字", count: 31)
-        _ = await sut.create()
+        #expect(await sut.create() == nil)
         #expect(sut.errorMessage == "名稱最多 30 個字。")
     }
 

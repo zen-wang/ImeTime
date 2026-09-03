@@ -47,6 +47,12 @@ struct HomeView: View {
                     path = [.room(createdRoom)]
                     Task { await listViewModel.load() }
                 }
+                // 滑動返回不會走上面的按鈕；createdRoom 還在就代表是這種情況，要清掉並補上列表更新
+                .onDisappear {
+                    guard self.createdRoom != nil else { return }
+                    self.createdRoom = nil
+                    Task { await listViewModel.load() }
+                }
             } else {
                 CreateRoomView(rooms: environment.rooms) { room in
                     createdRoom = room
