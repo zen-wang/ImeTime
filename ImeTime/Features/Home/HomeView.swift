@@ -1,33 +1,52 @@
 import ImeTimeCore
 import SwiftUI
 
-/// P0 佔位：顯示個人檔案與登出。P1 會改成房間列表。
 struct HomeView: View {
     let profile: Profile
-    let avatarURL: URL?
+    let environment: AppEnvironment
     let onSignOut: () -> Void
 
+    @State private var path: [HomeRoute] = []
+    @State private var listViewModel: RoomsListViewModel
+
+    init(profile: Profile, environment: AppEnvironment, onSignOut: @escaping () -> Void) {
+        self.profile = profile
+        self.environment = environment
+        self.onSignOut = onSignOut
+        _listViewModel = State(initialValue: RoomsListViewModel(rooms: environment.rooms))
+    }
+
     var body: some View {
-        NavigationStack {
-            VStack(spacing: 16) {
-                AsyncImage(url: avatarURL) { image in
-                    image.resizable().scaledToFill()
-                } placeholder: {
-                    Image(systemName: "person.crop.circle.fill")
-                        .resizable()
-                        .foregroundStyle(.secondary)
+        NavigationStack(path: $path) {
+            RoomsListView(viewModel: listViewModel, path: $path)
+                .navigationTitle("ImeTime")
+                .toolbar {
+                    ToolbarItem(placement: .topBarTrailing) {
+                        Menu {
+                            Text(profile.displayName)
+                            Button("登出", role: .destructive, action: onSignOut)
+                        } label: {
+                            Image(systemName: "person.crop.circle")
+                        }
+                    }
                 }
-                .frame(width: 96, height: 96)
-                .clipShape(Circle())
-                Text("嗨，\(profile.displayName)")
-                    .font(.title2.bold())
-                Text("房間功能將在下一階段加入。")
-                    .foregroundStyle(.secondary)
-            }
-            .navigationTitle("ImeTime")
-            .toolbar {
-                Button("登出", role: .destructive, action: onSignOut)
-            }
+                .navigationDestination(for: HomeRoute.self) { route in
+                    destination(for: route)
+                }
+        }
+    }
+
+    @ViewBuilder
+    private func destination(for route: HomeRoute) -> some View {
+        switch route {
+        case .createRoom:
+            Text("建立房間（Task 7）")   // Task 7 替換
+        case .joinRoom:
+            Text("加入房間（Task 8）")   // Task 8 替換
+        case .room(let room):
+            Text(room.name)              // Task 9 替換
+        case .roomSettings(let room):
+            Text("\(room.name) 設定")     // Task 9 替換
         }
     }
 }

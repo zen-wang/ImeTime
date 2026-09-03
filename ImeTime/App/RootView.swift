@@ -16,7 +16,7 @@ struct RootView: View {
         case .home(let profile):
             HomeView(
                 profile: profile,
-                avatarURL: profile.avatarPath.flatMap(environment.profiles.avatarURL),
+                environment: environment,
                 onSignOut: { Task { try? await environment.auth.signOut() } }
             )
         case .failed(let message):
