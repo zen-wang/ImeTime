@@ -1,5 +1,5 @@
 begin;
-select plan(11);
+select plan(12);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
@@ -29,6 +29,10 @@ select results_eq(
   $$update public.profiles set display_name = '小明二號'
     where id = '11111111-1111-1111-1111-111111111111' returning display_name$$,
   array['小明二號'], 'A updates own profile');
+select throws_ok(
+  $$update public.profiles set created_at = now()
+    where id = '11111111-1111-1111-1111-111111111111'$$,
+  '42501', null, 'A cannot rewrite created_at');
 select throws_ok(
   $$update public.profiles set id = '22222222-2222-2222-2222-222222222222'
     where id = '11111111-1111-1111-1111-111111111111'$$,
