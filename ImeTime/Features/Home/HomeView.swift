@@ -8,6 +8,7 @@ struct HomeView: View {
 
     @State private var path: [HomeRoute] = []
     @State private var listViewModel: RoomsListViewModel
+    @State private var createdRoom: Room?
 
     init(profile: Profile, environment: AppEnvironment, onSignOut: @escaping () -> Void) {
         self.profile = profile
@@ -40,7 +41,17 @@ struct HomeView: View {
     private func destination(for route: HomeRoute) -> some View {
         switch route {
         case .createRoom:
-            Text("建立房間（Task 7）")   // Task 7 替換
+            if let createdRoom {
+                RoomCreatedView(room: createdRoom) {
+                    self.createdRoom = nil
+                    path = [.room(createdRoom)]
+                    Task { await listViewModel.load() }
+                }
+            } else {
+                CreateRoomView(rooms: environment.rooms) { room in
+                    createdRoom = room
+                }
+            }
         case .joinRoom:
             Text("加入房間（Task 8）")   // Task 8 替換
         case .room(let room):
