@@ -25,6 +25,7 @@ final class RoomSettingsViewModel {
     var isMuted: Bool { me?.notificationsMuted ?? false }
 
     func load() async {
+        errorMessage = nil
         isLoading = true
         defer { isLoading = false }
         do {
@@ -37,6 +38,7 @@ final class RoomSettingsViewModel {
     }
 
     func remove(_ member: RoomMember) async {
+        errorMessage = nil
         guard isOwner, member.userID != currentUserID else { return }
         do {
             try await rooms.removeMember(roomID: room.id, userID: member.userID)
@@ -50,6 +52,7 @@ final class RoomSettingsViewModel {
     }
 
     func toggleMute() async {
+        errorMessage = nil
         let newValue = !isMuted
         do {
             try await rooms.setMuted(roomID: room.id, userID: currentUserID, muted: newValue)
@@ -67,6 +70,7 @@ final class RoomSettingsViewModel {
 
     /// 成功回 true，呼叫端應離開此房間的所有畫面。
     func leave() async -> Bool {
+        errorMessage = nil
         do {
             try await rooms.leaveRoom(id: room.id)
             return true
