@@ -1,5 +1,5 @@
 begin;
-select plan(14);
+select plan(18);
 
 -- 三個使用者：A（owner）、B（member）、C（不在房間）
 insert into auth.users (id, email) values
@@ -44,6 +44,9 @@ select results_eq(
 select is_empty(
   $$select * from public.profiles where id = '33333333-3333-3333-3333-333333333333'$$,
   'A cannot read stranger C profile');
+select results_eq(
+  $$select count(*)::int from public.room_members where room_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'$$,
+  array[2], 'A reads members of own room');
 
 -- B（member）
 set local request.jwt.claim.sub = '22222222-2222-2222-2222-222222222222';
@@ -59,6 +62,11 @@ select is_empty(
   $$update public.room_members set notifications_muted = true
     where user_id = '11111111-1111-1111-1111-111111111111' returning user_id$$,
   'B cannot mute A');
+select throws_ok(
+  $$update public.room_members set role = 'owner'
+    where room_id = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa'
+      and user_id = '22222222-2222-2222-2222-222222222222'$$,
+  '42501', null, 'B cannot grant itself owner');
 select is_empty(
   $$delete from public.room_members where user_id = '11111111-1111-1111-1111-111111111111' returning user_id$$,
   'member cannot remove owner');
@@ -66,9 +74,14 @@ select is_empty(
 -- C（外人）
 set local request.jwt.claim.sub = '33333333-3333-3333-3333-333333333333';
 select is_empty($$select * from public.rooms$$, 'stranger reads no rooms');
+select is_empty($$select * from public.room_members$$, 'stranger reads no room_members');
 
--- A 移除 B
+-- A：owner 離開房間須呼叫 leave_room()（會處理 owner 轉移），這裡驗證不能直接 delete 自己；然後移除 B
 set local request.jwt.claim.sub = '11111111-1111-1111-1111-111111111111';
+select is_empty(
+  $$delete from public.room_members
+    where user_id = '11111111-1111-1111-1111-111111111111' returning user_id$$,
+  'owner cannot remove self');
 select results_eq(
   $$delete from public.room_members where user_id = '22222222-2222-2222-2222-222222222222' returning user_id$$,
   array['22222222-2222-2222-2222-222222222222'::uuid], 'owner removes member');

@@ -5,7 +5,8 @@ create table public.rooms (
   invite_code text not null unique check (invite_code ~ '^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$'),
   timezone text not null,                       -- IANA，用於 04:00 日界
   max_members int not null default 12 check (max_members between 2 and 50),
-  created_by uuid not null references public.profiles (id),
+  -- 帳號刪除後房間與歷史仍在，只是不再知道是誰建立的；擁有權由 room_members.role 追蹤
+  created_by uuid references public.profiles (id) on delete set null,
   abandoned_at timestamptz,                     -- 最後一人離開的時間；P6 的 purge 依此清除
   created_at timestamptz not null default now()
 );
@@ -47,9 +48,10 @@ language sql stable security definer set search_path = public as $$
   );
 $$;
 
-revoke all on function public.is_room_member(uuid) from public;
-revoke all on function public.is_room_owner(uuid) from public;
-revoke all on function public.shares_room_with(uuid) from public;
+-- Supabase 對 public schema 的函式有預設 grant 給 anon，只 revoke from public 是無效的
+revoke all on function public.is_room_member(uuid) from public, anon;
+revoke all on function public.is_room_owner(uuid) from public, anon;
+revoke all on function public.shares_room_with(uuid) from public, anon;
 grant execute on function public.is_room_member(uuid) to authenticated;
 grant execute on function public.is_room_owner(uuid) to authenticated;
 grant execute on function public.shares_room_with(uuid) to authenticated;
