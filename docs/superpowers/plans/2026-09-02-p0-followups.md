@@ -15,13 +15,18 @@ P0 完成於 2026-09-02，tag `p0-done`（分支 `feat/p0-foundation`）。以�
 
 前提條件：iPhone 與 Mac 連同一個 Wi-Fi；Mac 上 `supabase start` 執行中；iPhone 第一次連線時會跳出「本機網路」權限，必須按允許，然後再試一次登入（第一次嘗試通常會在跳出權限時失敗）。
 
+## 已完成（2026-09-03）
+
+- 實機（iPhone 16 Pro）驗證 Sign in with Apple：登入、登出、再次登入皆成功。P0 的手動驗收到此完成。
+- repo 已推上 `https://github.com/zen-wang/ImeTime`（**Private**），含 `main` 與 tag `p0-done`。
+
 ## 專案擁有者現在要做的事
 
 1. **模擬器手動驗證 Sign in with Apple**（需你的 Apple ID）：
    - 先確認 `supabase status` 服務都在跑，且 `supabase/config.toml` 的 `[auth.external.apple] email_optional = true`（已設定）。
    - 冷啟動 → Welcome；取消登入 → 停留 Welcome 無錯誤；登入成功、無檔案 → 建立個人檔案；名稱空白 / 超過 20 字 → 紅字；選頭像 + 完成 → Home 顯示名稱與頭像，Studio（http://127.0.0.1:54323）的 Storage > avatars 有 `{uid}/avatar.jpg` 且 ≤ 200 KB；登出 → Welcome；重新登入 → 直接 Home；`supabase stop` 後登入 → 顯示錯誤而非閃退。
    - 若登入失敗且錯誤與 email/provider 有關，先檢查 `email_optional`。
-2. **把 repo 推上 GitHub**（或決定隱私政策要放哪），然後把 `ImeTime/App/AppLinks.swift` 的 `privacyPolicy` 改成真實網址。目前指向 `github.com/zen-wang/ImeTime`，帳號是猜的。
+2. **決定隱私政策要放在哪個公開位置。** repo 已推上去且帳號名稱正確，但因為是 Private，`ImeTime/App/AppLinks.swift` 目前指向的 `https://github.com/zen-wang/ImeTime/blob/main/docs/privacy.md` 對朋友仍然是 404。選項：把 repo 改成 Public（原始碼會公開）、開一個公開的 GitHub Gist、或用 GitHub Pages / Notion 放那一頁。決定後改 `AppLinks.privacyPolicy` 即可。TestFlight 上架前必須處理。
 
 ## 排入 P1 的工作
 
