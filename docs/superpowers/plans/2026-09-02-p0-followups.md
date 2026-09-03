@@ -28,21 +28,27 @@ P0 完成於 2026-09-02，tag `p0-done`（分支 `feat/p0-foundation`）。以�
    - 若登入失敗且錯誤與 email/provider 有關，先檢查 `email_optional`。
 2. ~~決定隱私政策要放在哪個公開位置。~~ **已解決（2026-09-03）**：repo 改為 Public，`AppLinks.privacyPolicy` 指向的 `https://github.com/zen-wang/ImeTime/blob/main/docs/privacy.md` 已可正常開啟（HTTP 200）。TestFlight 前若把 repo 改回 Private，這個連結會再次失效。
 
-## 排入 P1 的工作
+## 排入 P1 的工作 — 已對帳（2026-09-03）
 
-- **supabase-swift 的 `emitLocalSessionAsInitialSession`**：SDK 在 log 提醒目前的 initial session 行為會在下一個大版本改變，新行為會直接送出本機儲存的 session（可能已過期），要求呼叫端自行檢查 `session.isExpired`。目前維持預設（安全）；等 P1 動到 auth 時再一併 opt-in 並在 `AuthStateMapper` 或 `SupabaseAuthService` 加上過期檢查。
+P1 完成時只有 2 項真的落地。其餘 10 項全部是 1 到 5 行的小修正，已整併成 **P2 計劃的第一個批次任務**，不再散落在這裡。
 
-- ~~新增任務：Supabase 實作的整合測試~~ **已排入（2026-09-03）**：P1 計劃 Task 10，涵蓋 profile round-trip、頭像上傳與公開網址、房間建立/加入/成員/離開、RPC 錯誤映射，並新增 `make test-integration`。
-- profiles：`grant update (display_name, avatar_path)` 欄位級授權，避免 `created_at` 可被客戶端改寫；P1 擴大 select 政策時把「B 讀不到 profiles」改成「B 只讀得到室友」的正向測試。
-- avatars migration：`on conflict (id) do update set public, file_size_limit, allowed_mime_types` 讓既有 bucket 收斂到設定值；補一條大寫 UUID 路徑被拒（42501）的 pgTAP 斷言。
-- `SupabaseAuthService.states()` 改用 `bufferingNewest(1)`；`SessionCoordinator` 加 `deinit { observation?.cancel() }`；若新增可同時進行的狀態轉換，為 `resolveProfile` 加世代計數避免過期回應覆寫。
-- `WelcomeView`：登入成功後清掉 `currentNonce`；登入錯誤以 `os.Logger` 記錄型別（不含 token）；文案「請確認網路與 Supabase 是否啟動」在 TestFlight 前改為使用者語言。
+**已完成：**
+- ~~Supabase 實作的整合測試~~ → P1 Task 10，7 個測試對本機 stack 執行。
+- ~~profiles 欄位級授權~~ → migration `20260902000600`，`created_at` 不再可由客戶端改寫。
+
+**未完成，已轉入 P2 批次任務：**
+- `supabase-swift` 的 `emitLocalSessionAsInitialSession`：opt-in 新行為並在 `AuthStateMapper` 加 `session.isExpired` 檢查。
+- avatars migration 的 `on conflict (id) do update set` 收斂 bucket 設定。
+- 補一條大寫 UUID storage 路徑被拒（42501）的 pgTAP 斷言。
+- `SupabaseAuthService.states()` 改用 `bufferingNewest(1)`。
+- `SessionCoordinator` 加 `deinit { observation?.cancel() }`。
+- `WelcomeView`：登入成功後清掉 `currentNonce`；錯誤以 `os.Logger` 記錄型別（不含 token）。
 - `CreateProfileViewModel.save()` 開頭加 `guard !isSaving else { return nil }`。
-- `AvatarImageEncoder`：doc comment 說明 200 000 是低於 bucket 204 800 的安全邊際；品質迴圈改用整數步進。
-- `ProfileDecodingTests` 加一個含小數秒的 timestamptz 案例（使用 supabase-swift 的 decoder 或等效策略）。
-- scripts：`build-app.sh` / `test-app.sh` 的 `OS=18.6` 與 `name=iPhone 16` 歧義；`bootstrap.sh` 的工具檢查加入 `python3`，且 `LOCAL_SUPABASE_ANON_KEY` 那行不存在時應警告而非略過；`.gitignore` 重複的 `supabase/.temp/`；決定 `ImeTime/Info.plist` 是否改為不追蹤。
-- `AppConfigError.invalidSupabaseURL.userMessage` 在 Debug 指向 `LOCAL_SUPABASE_ANON_KEY`，但 Debug 的 URL 其實寫死在 `Config/Debug.xcconfig`，訊息可更精準。
-- HomeView 登出失敗目前無回饋（P1 會整個換掉 HomeView，新版要有錯誤提示）。
+- `AvatarImageEncoder` 的 doc comment 修正；品質迴圈改整數步進。
+- `ProfileDecodingTests` 加含小數秒的 timestamptz 案例。
+- scripts：`OS=18.6` 硬編與 `iPhone 16` 歧義；`bootstrap.sh` 的工具檢查加 `python3`；`.gitignore` 重複的 `supabase/.temp/`。
+- `AppConfigError.invalidSupabaseURL.userMessage` 在 Debug 指錯 key。
+- `RootView` 登出失敗仍是 `try?`，使用者按了沒有任何回饋。
 
 ## 排入 P6（TestFlight 收尾）的工作
 
