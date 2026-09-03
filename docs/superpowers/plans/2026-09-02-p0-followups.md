@@ -26,13 +26,13 @@ P0 完成於 2026-09-02，tag `p0-done`（分支 `feat/p0-foundation`）。以�
    - 先確認 `supabase status` 服務都在跑，且 `supabase/config.toml` 的 `[auth.external.apple] email_optional = true`（已設定）。
    - 冷啟動 → Welcome；取消登入 → 停留 Welcome 無錯誤；登入成功、無檔案 → 建立個人檔案；名稱空白 / 超過 20 字 → 紅字；選頭像 + 完成 → Home 顯示名稱與頭像，Studio（http://127.0.0.1:54323）的 Storage > avatars 有 `{uid}/avatar.jpg` 且 ≤ 200 KB；登出 → Welcome；重新登入 → 直接 Home；`supabase stop` 後登入 → 顯示錯誤而非閃退。
    - 若登入失敗且錯誤與 email/provider 有關，先檢查 `email_optional`。
-2. **決定隱私政策要放在哪個公開位置。** repo 已推上去且帳號名稱正確，但因為是 Private，`ImeTime/App/AppLinks.swift` 目前指向的 `https://github.com/zen-wang/ImeTime/blob/main/docs/privacy.md` 對朋友仍然是 404。選項：把 repo 改成 Public（原始碼會公開）、開一個公開的 GitHub Gist、或用 GitHub Pages / Notion 放那一頁。決定後改 `AppLinks.privacyPolicy` 即可。TestFlight 上架前必須處理。
+2. ~~決定隱私政策要放在哪個公開位置。~~ **已解決（2026-09-03）**：repo 改為 Public，`AppLinks.privacyPolicy` 指向的 `https://github.com/zen-wang/ImeTime/blob/main/docs/privacy.md` 已可正常開啟（HTTP 200）。TestFlight 前若把 repo 改回 Private，這個連結會再次失效。
 
 ## 排入 P1 的工作
 
 - **supabase-swift 的 `emitLocalSessionAsInitialSession`**：SDK 在 log 提醒目前的 initial session 行為會在下一個大版本改變，新行為會直接送出本機儲存的 session（可能已過期），要求呼叫端自行檢查 `session.isExpired`。目前維持預設（安全）；等 P1 動到 auth 時再一併 opt-in 並在 `AuthStateMapper` 或 `SupabaseAuthService` 加上過期檢查。
 
-- **新增任務：Supabase 實作的整合測試**。對本機 stack 建立使用者、透過 `SupabaseProfileRepository` 建立 profile、上傳 1 px 頭像、讀回；順便驗證小寫 UUID 路徑與日期解碼（含小數秒）。P0 目前 29 個 App 測試全部打 Fake。
+- ~~新增任務：Supabase 實作的整合測試~~ **已排入（2026-09-03）**：P1 計劃 Task 10，涵蓋 profile round-trip、頭像上傳與公開網址、房間建立/加入/成員/離開、RPC 錯誤映射，並新增 `make test-integration`。
 - profiles：`grant update (display_name, avatar_path)` 欄位級授權，避免 `created_at` 可被客戶端改寫；P1 擴大 select 政策時把「B 讀不到 profiles」改成「B 只讀得到室友」的正向測試。
 - avatars migration：`on conflict (id) do update set public, file_size_limit, allowed_mime_types` 讓既有 bucket 收斂到設定值；補一條大寫 UUID 路徑被拒（42501）的 pgTAP 斷言。
 - `SupabaseAuthService.states()` 改用 `bufferingNewest(1)`；`SessionCoordinator` 加 `deinit { observation?.cancel() }`；若新增可同時進行的狀態轉換，為 `resolveProfile` 加世代計數避免過期回應覆寫。
