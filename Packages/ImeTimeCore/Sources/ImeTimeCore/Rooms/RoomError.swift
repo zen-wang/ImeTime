@@ -5,6 +5,8 @@ public enum RoomError: Error, Equatable, Sendable {
     case alreadyMember
     case rateLimited
     case notMember
+    /// 由客戶端判定：RLS 過濾掉所有目標列，代表沒有權限（伺服器不會回報錯誤）。
+    case notPermitted
     case invalidName
     case invalidTimezone
     case profileRequired
@@ -33,6 +35,7 @@ public enum RoomError: Error, Equatable, Sendable {
         case .alreadyMember: "你已經在這個房間裡了。"
         case .rateLimited: "嘗試太多次了，請一分鐘後再試。"
         case .notMember: "你不在這個房間裡。"
+        case .notPermitted: "你沒有權限做這個操作，請重新整理後再試。"
         case .invalidName: "房間名稱需為 1 到 30 個字。"
         case .invalidTimezone: "無法辨識你的時區設定。"
         case .profileRequired: "請先建立個人檔案。"

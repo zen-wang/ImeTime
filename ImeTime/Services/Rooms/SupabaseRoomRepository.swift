@@ -82,25 +82,32 @@ struct SupabaseRoomRepository: RoomRepository {
     }
 
     func removeMember(roomID: UUID, userID: UUID) async throws {
-        try await mapErrors {
-            _ = try await client
+        struct AffectedRow: Decodable { let user_id: UUID }
+        // RLS 過濾掉的列不會報錯，只會影響 0 列；不看回傳就會把「沒權限」當成成功
+        let removed: [AffectedRow] = try await mapErrors {
+            try await client
                 .from("room_members")
                 .delete()
                 .eq("room_id", value: roomID.uuidString)
                 .eq("user_id", value: userID.uuidString)
                 .execute()
+                .value
         }
+        guard !removed.isEmpty else { throw RoomError.notPermitted }
     }
 
     func setMuted(roomID: UUID, userID: UUID, muted: Bool) async throws {
-        try await mapErrors {
-            _ = try await client
+        struct AffectedRow: Decodable { let user_id: UUID }
+        let updated: [AffectedRow] = try await mapErrors {
+            try await client
                 .from("room_members")
                 .update(["notifications_muted": muted])
                 .eq("room_id", value: roomID.uuidString)
                 .eq("user_id", value: userID.uuidString)
                 .execute()
+                .value
         }
+        guard !updated.isEmpty else { throw RoomError.notPermitted }
     }
 
     /// PostgREST 的錯誤訊息就是 SQL 裡 raise 的字串；其他錯誤原樣丟出。

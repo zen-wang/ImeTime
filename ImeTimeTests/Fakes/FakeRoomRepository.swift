@@ -61,5 +61,10 @@ actor FakeRoomRepository: RoomRepository {
     func setMuted(roomID: UUID, userID: UUID, muted: Bool) async throws {
         if let errorToThrow { throw errorToThrow }
         mutedCalls.append((roomID: roomID, userID: userID, muted: muted))
+        membersByRoom[roomID] = membersByRoom[roomID]?.map { member in
+            guard member.userID == userID else { return member }
+            return RoomMember(roomID: member.roomID, userID: member.userID, role: member.role,
+                              notificationsMuted: muted, joinedAt: member.joinedAt, profile: member.profile)
+        }
     }
 }

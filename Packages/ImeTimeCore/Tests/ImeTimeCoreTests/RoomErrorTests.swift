@@ -19,7 +19,7 @@ import Testing
     }
 
     @Test func everyCaseHasNonEmptyUserMessage() {
-        let all: [RoomError] = [.invalidCode, .roomFull, .alreadyMember, .rateLimited, .notMember,
+        let all: [RoomError] = [.invalidCode, .roomFull, .alreadyMember, .rateLimited, .notMember, .notPermitted,
                                 .invalidName, .invalidTimezone, .profileRequired, .notAuthenticated, .unknown("x")]
         for error in all {
             #expect(!error.userMessage.isEmpty)
