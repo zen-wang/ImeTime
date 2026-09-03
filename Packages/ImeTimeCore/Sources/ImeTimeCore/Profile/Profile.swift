@@ -1,7 +1,7 @@
 import Foundation
 
 /// 對應 public.profiles 一列。
-public struct Profile: Codable, Equatable, Sendable, Identifiable {
+public struct Profile: Codable, Hashable, Sendable, Identifiable {
     public let id: UUID
     public let displayName: String
     public let avatarPath: String?
