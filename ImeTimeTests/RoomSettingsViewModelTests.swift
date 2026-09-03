@@ -72,6 +72,15 @@ import Testing
         #expect(await rooms.leftRoomIDs == [room.id])
     }
 
+    @Test func removeDeniedByServerShowsPermissionMessage() async {
+        let (sut, rooms, _) = await makeSUT(myRole: .owner)
+        let target = sut.members.first { $0.userID == other }!
+        await rooms.fail(with: RoomError.notPermitted)
+        await sut.remove(target)
+        #expect(sut.errorMessage == RoomError.notPermitted.userMessage)
+        #expect(sut.members.count == 2)
+    }
+
     @Test func leaveFailureShowsErrorAndReturnsFalse() async {
         let (sut, rooms, _) = await makeSUT(myRole: .member)
         await rooms.fail(with: FakeError())

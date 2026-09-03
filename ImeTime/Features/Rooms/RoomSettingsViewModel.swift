@@ -29,6 +29,8 @@ final class RoomSettingsViewModel {
         defer { isLoading = false }
         do {
             members = try await rooms.members(roomID: room.id)
+        } catch let error as RoomError {
+            errorMessage = error.userMessage
         } catch {
             errorMessage = "無法載入成員。"
         }
@@ -39,6 +41,9 @@ final class RoomSettingsViewModel {
         do {
             try await rooms.removeMember(roomID: room.id, userID: member.userID)
             members = members.filter { $0.userID != member.userID }
+        } catch let error as RoomError {
+            // RLS 拒絕時 repository 會丟 .notPermitted；用泛用訊息會誤導成網路問題
+            errorMessage = error.userMessage
         } catch {
             errorMessage = Self.genericError
         }
@@ -53,6 +58,8 @@ final class RoomSettingsViewModel {
                 return RoomMember(roomID: member.roomID, userID: member.userID, role: member.role,
                                   notificationsMuted: newValue, joinedAt: member.joinedAt, profile: member.profile)
             }
+        } catch let error as RoomError {
+            errorMessage = error.userMessage
         } catch {
             errorMessage = Self.genericError
         }
@@ -63,6 +70,9 @@ final class RoomSettingsViewModel {
         do {
             try await rooms.leaveRoom(id: room.id)
             return true
+        } catch let error as RoomError {
+            errorMessage = error.userMessage
+            return false
         } catch {
             errorMessage = Self.genericError
             return false
