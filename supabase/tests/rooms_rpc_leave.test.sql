@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
@@ -17,6 +17,11 @@ insert into public.room_members (room_id, user_id, role, joined_at) values
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '11111111-1111-1111-1111-111111111111', 'owner',  '2026-09-01 00:00+00'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '22222222-2222-2222-2222-222222222222', 'member', '2026-09-01 01:00+00'),
   ('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', '33333333-3333-3333-3333-333333333333', 'member', '2026-09-01 02:00+00');
+
+set local role anon;
+select throws_ok(
+  $$select public.leave_room('aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa')$$,
+  '42501', null, 'anon cannot call leave_room');
 
 set local role authenticated;
 

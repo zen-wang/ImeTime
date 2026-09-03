@@ -1,5 +1,5 @@
 begin;
-select plan(7);
+select plan(8);
 
 insert into auth.users (id, email) values
   ('11111111-1111-1111-1111-111111111111', 'a@example.com'),
@@ -21,6 +21,11 @@ select results_eq(
 select ok(
   (select invite_code ~ '^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$' from public.rooms limit 1),
   'invite code uses the 32-letter alphabet');
+-- 直接驗證產生器：上一條會被 rooms_invite_code_check 擋下而測不到 generate_invite_code 本身
+select ok(
+  (select bool_and(public.generate_invite_code() ~ '^[ABCDEFGHJKLMNPQRSTUVWXYZ23456789]{6}$')
+     from generate_series(1, 200)),
+  'generate_invite_code only emits alphabet characters');
 select throws_ok($$select public.create_room('   ', 'Asia/Taipei')$$, 'P0001', 'invalid_name', 'blank name rejected');
 select throws_ok($$select public.create_room('X', 'Mars/Olympus')$$, 'P0001', 'invalid_timezone', 'unknown timezone rejected');
 

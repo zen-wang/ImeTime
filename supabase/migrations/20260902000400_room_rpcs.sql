@@ -7,6 +7,7 @@ create table public.join_attempts (
 create index join_attempts_user_time_idx on public.join_attempts (user_id, attempted_at);
 alter table public.join_attempts enable row level security;
 revoke all on public.join_attempts from anon, authenticated;
+revoke all on sequence public.join_attempts_id_seq from anon, authenticated;
 
 -- 與 Swift InviteCode.alphabet 相同
 create or replace function public.generate_invite_code() returns text
@@ -24,7 +25,7 @@ $$;
 revoke all on function public.generate_invite_code() from public, anon;
 
 create or replace function public.create_room(p_name text, p_timezone text) returns public.rooms
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_uid uuid := auth.uid();
   v_name text := btrim(coalesce(p_name, ''));
@@ -34,7 +35,7 @@ begin
   if v_uid is null then raise exception 'not_authenticated'; end if;
   if not exists (select 1 from public.profiles where id = v_uid) then raise exception 'profile_required'; end if;
   if char_length(v_name) not between 1 and 30 then raise exception 'invalid_name'; end if;
-  if not exists (select 1 from pg_timezone_names where name = p_timezone) then raise exception 'invalid_timezone'; end if;
+  if not exists (select 1 from pg_catalog.pg_timezone_names where name = p_timezone) then raise exception 'invalid_timezone'; end if;
 
   for attempt in 1..10 loop
     v_code := public.generate_invite_code();
@@ -53,7 +54,7 @@ $$;
 
 -- 錯誤以 jsonb 回傳而非 raise：raise 會回滾 join_attempts 的寫入，讓速率限制失效
 create or replace function public.join_room(p_code text) returns jsonb
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_uid uuid := auth.uid();
   v_code text := upper(regexp_replace(coalesce(p_code, ''), '[\s\-]', '', 'g'));
@@ -88,7 +89,7 @@ end;
 $$;
 
 create or replace function public.leave_room(p_room_id uuid) returns void
-language plpgsql security definer set search_path = public as $$
+language plpgsql security definer set search_path = public, pg_temp as $$
 declare
   v_uid uuid := auth.uid();
   v_role text;

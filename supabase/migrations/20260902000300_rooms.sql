@@ -23,7 +23,7 @@ create index room_members_user_idx on public.room_members (user_id);
 
 -- RLS 用的 helper：security definer 以繞過 room_members 自身的 RLS，避免遞迴
 create or replace function public.is_room_member(p_room_id uuid) returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public, pg_temp as $$
   select exists (
     select 1 from public.room_members
     where room_id = p_room_id and user_id = (select auth.uid())
@@ -31,7 +31,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 create or replace function public.is_room_owner(p_room_id uuid) returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public, pg_temp as $$
   select exists (
     select 1 from public.room_members
     where room_id = p_room_id and user_id = (select auth.uid()) and role = 'owner'
@@ -39,7 +39,7 @@ language sql stable security definer set search_path = public as $$
 $$;
 
 create or replace function public.shares_room_with(p_user_id uuid) returns boolean
-language sql stable security definer set search_path = public as $$
+language sql stable security definer set search_path = public, pg_temp as $$
   select exists (
     select 1
     from public.room_members mine
