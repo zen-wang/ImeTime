@@ -59,7 +59,10 @@ struct HomeView: View {
                 }
             }
         case .joinRoom:
-            Text("加入房間（Task 8）")   // Task 8 替換
+            JoinRoomView(rooms: environment.rooms) { room in
+                path = [.room(room)]
+                Task { await listViewModel.load() }
+            }
         case .room(let room):
             Text(room.name)              // Task 9 替換
         case .roomSettings(let room):
