@@ -1,4 +1,4 @@
-.PHONY: bootstrap generate build test-core test-app test-db db-reset test
+.PHONY: bootstrap generate build test-core test-app test-db test-integration db-reset test
 
 bootstrap:
 	scripts/bootstrap.sh
@@ -21,4 +21,7 @@ db-reset:
 test-db:
 	supabase test db
 
-test: test-core test-db test-app
+test-integration: generate
+	scripts/test-integration.sh
+
+test: test-core test-db test-integration
